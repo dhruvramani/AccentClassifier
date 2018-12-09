@@ -3,7 +3,7 @@ import torch
 import librosa
 import numpy as np
 import pandas as pd
-from features import *
+from feature import *
 from torch.utils.data import Dataset, DataLoader
 
 #    vdataset = VCTK('/home/nevronas/dataset/', download=False, transform=inp_transform)
@@ -54,7 +54,7 @@ class AccentDataset(Dataset):
         self.count = 0
 
     def get_data(self):
-        i = self.count * self.batch_size, count = 0
+        i, count = self.count * self.batch_size, 0
         audios = []
         while(count < self.batch_size):
             row = self.csv.iloc[[int(i % self.csv.shape[0])]]
