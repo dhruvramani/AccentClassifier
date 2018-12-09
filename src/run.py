@@ -3,6 +3,8 @@ import torch
 import argparse
 import numpy as np
 import torch.nn.functional as F
+import torch.nn as nn
+import torch.optim as optim
 from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
 
@@ -45,6 +47,27 @@ testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False,
 classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 # NOTE : Build model here & check if to be resumed
+class TransformationNetwork(nn.Module):
+    def __init__(self):
+        super(TransformationNetwork, self).__init__()
+        self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
+        self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
+        self.conv2_drop = nn.Dropout2d()
+        self.fc1 = nn.Linear(320, 50)
+        self.fc2 = nn.Linear(50, 10)
+
+        self.enc.load_state_dict(torch.load('../save/checkpoint/.ckpt'))
+
+
+    def forward(self, x):
+        x = F.relu(F.max_pool2d(self.conv1(x), 2))
+        x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
+        x = x.view(-1, 320)
+        x = F.relu(self.fc1(x))
+        x = F.dropout(x, training=self.training)
+        x = self.fc2(x)
+        return F.log_softmax(x, dim=1)
+
 
 print('==> Building network..')
 t_net = TransformationNetwork()
@@ -57,10 +80,11 @@ if args.resume:
     # Load checkpoint.
     print('==> Resuming from checkpoint..')
     assert os.path.isdir('../save/checkpoint'), 'Error: no checkpoint directory found!'
-    checkpoint = torch.load('../save/checkpoint/ckpt.t7')
-    net.load_state_dict(checkpoint['net'])
+    checkpoint = torch.load('../save/checkpoint/ckpt')
+    t_net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
+
 
 # NOTE : Define losses here
 
@@ -68,10 +92,10 @@ criterion = nn.CrossEntropyLoss()
 
 def train(epoch, curr_class, old_classes):
     print('\nEpoch: %d' % epoch)
-    net.train()
+    t_net.train()
     
     train_loss, correct, total = 0, 0, 0
-    params = net.parameters()
+    params = t_net.parameters()
     optimizer = optim.SGD(params, lr=args.lr, momentum=0.9, weight_decay=5e-4)
 
     for batch_idx, (inputs, targets) in enumerate(trainloader):
@@ -79,7 +103,7 @@ def train(epoch, curr_class, old_classes):
         
         # NOTE : Main optimizing here
         optimizer.zero_grad()
-        y_pred = net(inputs)
+        y_pred = t_net(inputs)
         loss = criterion(outputs, Y)
         loss.backward()
         optimizer.step()
@@ -100,7 +124,7 @@ def train(epoch, curr_class, old_classes):
 
 def test(epoch, curr_class):
     global best_acc
-    net.eval()
+    t_net.eval()
     test_loss = 0
     correct = 0
     total = 0
@@ -128,7 +152,7 @@ def test(epoch, curr_class):
     acc = 100.*correct/total
     if acc > best_acc:
         print('Saving..')
-        state = {'net': net.state_dict(), 'acc': acc, 'epoch': epoch}
+        state = {'net': t_net.state_dict(), 'acc': acc, 'epoch': epoch}
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
         torch.save(state, './checkpoint/ckpt.t7')
