@@ -6,10 +6,39 @@ import pandas as pd
 from features import *
 from torch.utils.data import Dataset, DataLoader
 
+#    vdataset = VCTK('/home/nevronas/dataset/', download=False, transform=inp_transform)
+#    dataloader = DataLoader(vdataset, batch_size=args.batch_size, shuffle=True,  collate_fn=collate_fn)
+
+def collate_fn(data):
+    data = list(filter(lambda x: type(x[1]) != int, data))
+    audios, captions = zip(*data)
+    data = None
+    del data
+    audios = torch.stack(audios, 0)
+    return audios, captions
+
+def inp_transform(sample):
+    aud_sample, class_sample = [], []
+    for i in sample:
+        inp, label = i['audio'], i['class']
+        inp = inp.flatten()
+        inp = transform_stft(inp)
+        #inp = torch.Tensor(inp)
+        #inp = inp.unsqueeze(0)
+        lbl = np.zeros((15))
+        lbl[label] = 1
+        aud_sample.append(inp)  
+        class_sample.append(lbl)
+
+    aud_sample = torch.Tensor(aud_sample)
+    class_sample = torch.Tensor(class_sample)
+    return aud_sample, class_sample
+
+
 class AccentDataset(Dataset):
     """Accent dataset."""
 
-    def __init__(self, csv_file="/home/nevronas/dataset/accent/speaker_all.csv", root_dir="/home/nevronas/dataset/accent/recordings", batch_size=10, transform=None):
+    def __init__(self, csv_file="/home/nevronas/dataset/accent/speaker_all.csv", root_dir="/home/nevronas/dataset/accent/recordings", batch_size=10, transform=inp_transform):
         """
         Args:
             csv_file (string): Path to the csv file.
@@ -32,7 +61,7 @@ class AccentDataset(Dataset):
             if(row['native_language'][1] in self.top_15_langs):
                 filename = row['filename'][1]
                 signal, fs = librosa.load("{}/{}.mp3".format(self.root_dir, filename))
-                audios.append({"audio" : signal, "class" : row['native_language'][1]})
+                audios.append({"audio" : signal, "class" : self.top_15_langs.index(row['native_language'][1])})
                 count += 1
             i += 1
 
