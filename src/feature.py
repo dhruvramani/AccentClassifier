@@ -4,20 +4,20 @@ import numpy as np
 import glob
 
 N_FFT = 128
-def transform_stft(signal, pad=True):
+def transform_stft(signal, pad=0):
     D = librosa.stft(signal, n_fft=N_FFT)
     S, phase = librosa.magphase(D)
     S = np.log1p(S)
     if(pad):
-        S = librosa.util.pad_center(S, 1700)
+        S = librosa.util.pad_center(S, pad)
     return S
 
 def transform_stft_new(signal):
     D = librosa.stft(signal, n_fft=N_FFT)
     S, phase = librosa.magphase(D)
     S = (D**2)/N_FFT
-    S = np.log1p(S)
-    S = librosa.util.pad_center(S, 2500)
+    S = np.log1p(S + 10e-7)
+    # S = librosa.util.pad_center(S, 2500)
     return S
 
 def invert_spectrogram(result, a_content, fs, outpath):

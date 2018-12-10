@@ -11,12 +11,12 @@ import torch.backends.cudnn as cudnn
 from model import *
 from dataset import *
 from utils import progress_bar
-
+import gc
 # NOTE : All parser related stuff here
 
 parser = argparse.ArgumentParser(description='PyTorch Accent Classifier')
 parser.add_argument('--lr', default=0.01, type=float, help='learning rate')
-parser.add_argument('--batch_size', default=15, type=int)
+parser.add_argument('--batch_size', default=1, type=int)
 parser.add_argument('--resume', '-r', default=1, type=int, help='resume from checkpoint')
 args = parser.parse_args()
 
@@ -40,9 +40,6 @@ transform_test = transforms.Compose([
 ])
 '''
 
-trainset = AccentDataset()
-dataloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True)
-
 classes = ('english', 'spanish', 'arabic', 'mandarin', 'french', 'german', 'korean', 'russian', 'portuguese', 'dutch', 'turkish', 'italian', 'polish', 'japanese', 'vietnamese')
 
 # NOTE : Build model here & check if to be resumed
@@ -57,12 +54,12 @@ if device == 'cuda':
 if args.resume:
     if(os.path.isfile('../save/network.ckpt')):
         net.load_state_dict(torch.load('../save/network.ckpt'))
-        print("=> Loss Network : loaded")
+        print("=> Network : loaded")
     
     if(os.path.isfile("../save/info.txt")):
         with open("../save/info.txt", "r") as f:
             start_epoch, start_step = (int(i) for i in str(f.read()).split(" "))
-            print("=> Loss Network : prev epoch found")]
+            print("=> Network : prev epoch found")
 
 
 # NOTE : Define losses here
@@ -71,25 +68,31 @@ criterion = nn.CrossEntropyLoss()
 
 def train(epoch):
     global start_step
+    trainset = AccentDataset()
+    dataloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True)
+    dataloader = iter(dataloader)
     print('\nEpoch: %d' % epoch)
     
     train_loss, correct, total = 0, 0, 0
     params = net.parameters()
     optimizer = optim.SGD(params, lr=args.lr, momentum=0.9, weight_decay=5e-4)
 
-    for batch_idx, (inputs, targets) in enumerate(dataloader):
+    for batch_idx in range(start_step, len(dataloader)):
+        (inputs, targets) = next(dataloader)
+        inputs, targets = inputs[0], targets[0]
+        targets = targets.type(torch.LongTensor)
         inputs, targets = inputs.to(device), targets.to(device)
-        
+
         # NOTE : Main optimizing here
         optimizer.zero_grad()
         y_pred = net(inputs)
-        loss = criterion(outputs, Y)
+        loss = criterion(y_pred, targets)
         loss.backward()
         optimizer.step()
 
         # NOTE : Logging here
         train_loss += loss.item()
-        _, predicted = outputs.max(1)
+        _, predicted = y_pred.max(1)
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
 
@@ -104,10 +107,12 @@ def train(epoch):
 
         torch.save(net.state_dict(), '../save/network.ckpt')
 
-        with open("models/info.txt", "w+") as f:
-            f.write("{} {}".format(epoch, i))
+        with open("../save/info.txt", "w+") as f:
+            f.write("{} {}".format(epoch, batch_idx))
 
         progress_bar(batch_idx, len(dataloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+
+        start_step = 0
 
 def test(epoch):
     global best_acc
@@ -125,11 +130,11 @@ def test(epoch):
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
 
-            with open("./logs/test_loss.log", "a+") as lfile:
+            with open("../save/logs/test_loss.log", "a+") as lfile:
                 lfile.write(str(test_loss / total))
                 lfile.write("\n")
 
-            with open("./logs/test_acc.log", "a+") as afile:
+            with open("../save/logs/test_acc.log", "a+") as afile:
                 afile.write(str(correct / total))
                 afile.write("\n")
 
@@ -140,12 +145,11 @@ def test(epoch):
     if acc > best_acc:
         print('Saving..')
         state = {'net': net.state_dict(), 'acc': acc, 'epoch': epoch}
-        if not os.path.isdir('checkpoint'):
-            os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/ckpt.t7')
+        if not os.path.isdir('../save/checkpoint'):
+            os.mkdir('../save/checkpoint')
+        torch.save(state, '../save/checkpoint/ckpt.t7')
         best_acc = acc
 
-
 for epoch in range(start_epoch, start_epoch + 200):
-    train(epoch, i)
-    test(epoch, i)
+    train(epoch)
+    test(epoch)
