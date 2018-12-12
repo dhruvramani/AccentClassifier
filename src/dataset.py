@@ -10,8 +10,6 @@ import librosa
 import matplotlib
 import matplotlib.pyplot as plt
 
-
-
 #    vdataset = VCTK('/home/nevronas/dataset/', download=False, transform=inp_transform)
 #    dataloader = DataLoader(vdataset, batch_size=args.batch_size, shuffle=True,  collate_fn=collate_fn)
 def read_audio(fp, downsample=True):
@@ -51,22 +49,38 @@ def inp_transform(sample):
                 
         # lbl = np.zeros((15))
         # lbl[label] = 1
-        for j in range(0,inp.shape[1],500):
-            try:
-                sam = inp[:,j:j+500]
-                if(sam.shape[1]<500):
-                    sam = librosa.util.pad_center(sam, 500)
-                # print(sam.shape)
-                audio = inp
-                # plt.imshow(audio)
-                # plt.show()
-                # _ = input()
+
+        # for j in range(0,inp.shape[1],500):
+        #     try:
+        #         sam = inp[:,j:j+500]
+        #         if(sam.shape[1]<500):
+        #             sam = librosa.util.pad_center(sam, 500)
+        #         # print(sam.shape)
+        #         audio = inp
+        #         # plt.imshow(audio)
+        #         # plt.show()
+        #         # _ = input()
                 
-                aud_sample.append(sam)  
-                class_sample.append(label)
-            except Exception as e:
-                print(str(e))
-                pass
+        #         aud_sample.append(sam)  
+        #         class_sample.append(label)
+        #     except Exception as e:
+        #         print(str(e))
+        #         pass
+
+        
+        S = librosa.util.pad_center(inp, 3000)
+
+        print(S.shape)
+
+        for j in range(513):
+            for i in range(3000):
+                S[j][i] = S[j][i] - S[j-1][i]
+
+        S = np.abs(S)
+        plt.imshow(S)
+        plt.show()
+
+
     aud_sample = torch.Tensor(aud_sample)
     class_sample = torch.Tensor(class_sample)
     aud_sample = aud_sample.unsqueeze(1)
