@@ -38,7 +38,7 @@ def inp_transform(sample):
         inp = inp.numpy()
         inp = inp.flatten()
         inp = transform_stft(inp)
-        matplotlib.image.imsave('../save/imgs/stft_new.png', inp)
+        # matplotlib.image.imsave('../save/imgs/stft_new.png', inp)
         # print(inp.shape)
         # foo = np.expand_dims(inp, axis=2)
         # aud = np.concatenate((foo, np.zeros(foo.shape), np.zeros(foo.shape)), axis=2)
@@ -77,8 +77,12 @@ def inp_transform(sample):
                 S[j][i] = S[j][i] - S[j-1][i]
 
         S = np.abs(S)
-        plt.imshow(S)
-        plt.show()
+        # plt.imshow(S)
+        # plt.show()
+        for sub in range(0,3000,500):
+            aud_sample.append(S[:.sub:sub+500])  
+            class_sample.append(label)
+
 
 
     aud_sample = torch.Tensor(aud_sample)
