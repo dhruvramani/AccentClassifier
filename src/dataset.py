@@ -50,38 +50,43 @@ def inp_transform(sample):
         # lbl = np.zeros((15))
         # lbl[label] = 1
 
-        # for j in range(0,inp.shape[1],500):
-        #     try:
-        #         sam = inp[:,j:j+500]
-        #         if(sam.shape[1]<500):
-        #             sam = librosa.util.pad_center(sam, 500)
-        #         # print(sam.shape)
-        #         audio = inp
-        #         # plt.imshow(audio)
-        #         # plt.show()
-        #         # _ = input()
-                
-        #         aud_sample.append(sam)  
-        #         class_sample.append(label)
-        #     except Exception as e:
-        #         print(str(e))
-        #         pass
+        for j in range(0,inp.shape[1],500):
+            try:
+                sam = inp[:,j:j+500]
+                if(sam.shape[1]<500):
+                    sam = librosa.util.pad_center(sam, 500)
+                # print(sam.shape)
+                audio = inp
+                # plt.imshow(audio)
+                # plt.show()
+                # _ = input()
+                for a in range(513):
+                    for b in range(500):
+                        sam[a][b] = sam[a][b] - sam[a-1][b]
+
+                sam = np.abs(sam)
+                aud_sample.append(sam)  
+                class_sample.append(label)
+            except Exception as e:
+                print(str(e))
+                pass
 
         
-        S = librosa.util.pad_center(inp, 3000)
+        # S = librosa.util.pad_center(inp, 3000)
 
-        print(S.shape)
+        # #print(S.shape)
 
-        for j in range(513):
-            for i in range(3000):
-                S[j][i] = S[j][i] - S[j-1][i]
+        # for j in range(513):
+        #     for i in range(3000):
+        #         S[j][i] = S[j][i] - S[j-1][i]
 
-        S = np.abs(S)
-        # plt.imshow(S)
-        # plt.show()
-        for sub in range(0,3000,500):
-            aud_sample.append(S[:.sub:sub+500])  
-            class_sample.append(label)
+        # S = np.abs(S)
+        # # plt.imshow(S)
+        # # plt.show()
+        # for sub in range(0,inp.shape[1],500):
+        #     sam = inp[sub:sub+500]
+        #     aud_sample.append(sam)  
+        #     class_sample.append(label)
 
 
 

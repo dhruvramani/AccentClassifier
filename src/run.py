@@ -17,7 +17,7 @@ import gc
 parser = argparse.ArgumentParser(description='PyTorch Accent Classifier')
 parser.add_argument('--lr', default=0.01, type=float, help='learning rate')
 parser.add_argument('--batch_size', default=1, type=int)
-parser.add_argument('--resume', '-r', default=1, type=int, help='resume from checkpoint')
+parser.add_argument('--resume', '-r', default=0, type=int, help='resume from checkpoint')
 args = parser.parse_args()
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
