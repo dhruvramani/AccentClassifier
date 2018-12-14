@@ -4,13 +4,20 @@ import numpy as np
 import glob
 
 N_FFT = 1024
+
+def mel_transform(S, fs=48000):
+    mel = librosa.filters.mel(fs, N_FFT)
+    meld = torch.DoubleTensor(mel)
+    Sd = torch.DoubleTensor(S)
+    return Sd, mel
+
 def transform_stft(signal, pad=0):
     D = librosa.stft(signal, n_fft=N_FFT)
     S, phase = librosa.magphase(D)
     S = np.log1p(S)
     if(pad):
         S = librosa.util.pad_center(S, pad)
-    return S
+    return S, phase
 
 def transform_stft_new(signal):
     D = librosa.stft(signal, n_fft=N_FFT)

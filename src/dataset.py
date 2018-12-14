@@ -34,10 +34,11 @@ def inp_transform(sample):
     aud_sample, class_sample = [], []
     for i in sample:
         inp, label = i['audio'], i['class']
-        inp = read_audio(inp)[0]
+        inp, fs = read_audio(inp)
         inp = inp.numpy()
         inp = inp.flatten()
-        inp = transform_stft(inp)
+        _, mel = mel_transform(inp, fs)
+        #inp, _  = transform_stft(inp)
         # matplotlib.image.imsave('../save/imgs/stft_new.png', inp)
         # print(inp.shape)
         # foo = np.expand_dims(inp, axis=2)
@@ -50,21 +51,24 @@ def inp_transform(sample):
         # lbl = np.zeros((15))
         # lbl[label] = 1
 
-        for j in range(0,inp.shape[1],500):
+        for j in range(0, mel.shape[1], 500):
             try:
-                sam = inp[:,j:j+500]
-                if(sam.shape[1]<500):
+                sam = mel[:, j:j + 500]
+                if(sam.shape[1] < 500):
                     sam = librosa.util.pad_center(sam, 500)
+                '''
                 # print(sam.shape)
-                audio = inp
+                #audio = inp
                 # plt.imshow(audio)
                 # plt.show()
                 # _ = input()
+                # Displacement
+                
                 for a in range(513):
                     for b in range(500):
-                        sam[a][b] = sam[a][b] - sam[a-1][b]
-
+                        sam[a][b] = sam[a][b] - sam[a - 1][b]
                 sam = np.abs(sam)
+                '''
                 aud_sample.append(sam)  
                 class_sample.append(label)
             except Exception as e:

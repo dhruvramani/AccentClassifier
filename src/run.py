@@ -1,3 +1,4 @@
+import gc
 import os
 import torch
 import argparse
@@ -11,38 +12,26 @@ import torch.backends.cudnn as cudnn
 from model import *
 from dataset import *
 from utils import progress_bar
-import gc
-# NOTE : All parser related stuff here
 
 parser = argparse.ArgumentParser(description='PyTorch Accent Classifier')
-parser.add_argument('--lr', default=0.01, type=float, help='learning rate')
-parser.add_argument('--batch_size', default=1, type=int)
+parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
+parser.add_argument('--batch_size', default=10, type=int)
 parser.add_argument('--resume', '-r', default=0, type=int, help='resume from checkpoint')
 args = parser.parse_args()
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 best_acc, start_epoch, start_step = 0, 0, 0  # best test accuracy, start from epoch 0 or last checkpoint epoch
 
-# NOTE : All data related stuff here
+# To get logs of current run only
+with open("../save/transform/logs/train_loss.log", "w+") as f:
+    pass 
+
+# To get logs of current run only
+with open("../save/transform/logs/test_acc.log", "w+") as f:
+    pass 
 
 print('==> Preparing data..')
-'''
-transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding=4),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
-
-transform_test = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
-'''
-
 classes = ('english', 'spanish', 'arabic', 'mandarin', 'french', 'german', 'korean', 'russian', 'portuguese', 'dutch', 'turkish', 'italian', 'polish', 'japanese', 'vietnamese')
-
-# NOTE : Build model here & check if to be resumed
 
 print('==> Building network..')
 net = AlexNet()
@@ -61,10 +50,7 @@ if args.resume:
             start_epoch, start_step = (int(i) for i in str(f.read()).split(" "))
             print("=> Network : prev epoch found")
 
-
-# NOTE : Define losses here
-
-criterion = nn.CrossEntropyLoss()
+criterion = nn.CrossEntropyLoss(reduction='sum') # To calculate the average later
 
 def train(epoch):
     global start_step
@@ -79,7 +65,7 @@ def train(epoch):
 
     for batch_idx in range(start_step, len(dataloader)):
         (inputs, targets) = next(dataloader)
-        inputs, targets = inputs[0], targets[0]
+        #inputs, targets = inputs[0], targets[0] # TF?
         targets = targets.type(torch.LongTensor)
         inputs, targets = inputs.to(device), targets.to(device)
 
@@ -87,6 +73,7 @@ def train(epoch):
         optimizer.zero_grad()
         y_pred = net(inputs)
         loss = criterion(y_pred, targets)
+        loss = loss / inputs.shape[0]
         loss.backward()
         optimizer.step()
 
@@ -123,7 +110,7 @@ def test(epoch):
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(dataloader):
             _, outputs = net(inputs)
-            loss = loss(outputs, targets)
+            loss = criterion(outputs, targets)
 
             test_loss += loss.item()
             _, predicted = outputs.max(1)
