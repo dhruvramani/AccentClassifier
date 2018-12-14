@@ -15,7 +15,7 @@ from utils import progress_bar
 
 parser = argparse.ArgumentParser(description='PyTorch Accent Classifier')
 parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
-parser.add_argument('--batch_size', default=10, type=int)
+parser.add_argument('--batch_size', default=1, type=int)
 parser.add_argument('--resume', '-r', default=0, type=int, help='resume from checkpoint')
 args = parser.parse_args()
 
@@ -65,7 +65,7 @@ def train(epoch):
 
     for batch_idx in range(start_step, len(dataloader)):
         (inputs, targets) = next(dataloader)
-        #inputs, targets = inputs[0], targets[0] # TF?
+        inputs, targets = inputs[0], targets[0] # batch_size == 1 ~= 1 sample
         targets = targets.type(torch.LongTensor)
         inputs, targets = inputs.to(device), targets.to(device)
 
