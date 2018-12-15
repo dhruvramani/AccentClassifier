@@ -61,7 +61,7 @@ def train(epoch):
     
     train_loss, correct, total = 0, 0, 0
     params = net.parameters()
-    optimizer = optim.Adam(params, lr=args.lr, momentum=0.9)#, weight_decay=5e-4)
+    optimizer = optim.Adam(params, lr=args.lr)#, momentum=0.9)#, weight_decay=5e-4)
 
     for batch_idx in range(start_step, len(dataloader)):
         (inputs, targets) = next(dataloader)
