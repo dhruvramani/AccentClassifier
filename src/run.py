@@ -14,7 +14,7 @@ from dataset import *
 from utils import progress_bar
 
 parser = argparse.ArgumentParser(description='PyTorch Accent Classifier')
-parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
+parser.add_argument('--lr', default=0.01, type=float, help='learning rate')
 parser.add_argument('--batch_size', default=1, type=int)
 parser.add_argument('--resume', '-r', default=0, type=int, help='resume from checkpoint')
 args = parser.parse_args()
@@ -61,7 +61,7 @@ def train(epoch):
     
     train_loss, correct, total = 0, 0, 0
     params = net.parameters()
-    optimizer = optim.SGD(params, lr=args.lr, momentum=0.9, weight_decay=5e-4)
+    optimizer = optim.Adam(params, lr=args.lr, momentum=0.9)#, weight_decay=5e-4)
 
     for batch_idx in range(start_step, len(dataloader)):
         (inputs, targets) = next(dataloader)
