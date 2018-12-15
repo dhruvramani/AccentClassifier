@@ -23,11 +23,11 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 best_acc, start_epoch, start_step = 0, 0, 0  # best test accuracy, start from epoch 0 or last checkpoint epoch
 
 # To get logs of current run only
-with open("../save/transform/logs/train_loss.log", "w+") as f:
+with open("../save/logs/train_loss.log", "w+") as f:
     pass 
 
 # To get logs of current run only
-with open("../save/transform/logs/test_acc.log", "w+") as f:
+with open("../save/logs/test_acc.log", "w+") as f:
     pass 
 
 print('==> Preparing data..')
