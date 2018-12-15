@@ -32,7 +32,6 @@ class AlexNet(nn.Module):
 
     def forward(self, x):
         x = self.features(x)
-        print(x.size())
         x = x.view(x.size()[0], 256 * 3 * 14)
         x = self.classifier(x)
         return x
