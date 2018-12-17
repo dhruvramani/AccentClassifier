@@ -37,9 +37,10 @@ def inp_transform(sample):
         inp, fs = read_audio(inp)
         inp = inp.numpy()
         inp = inp.flatten()
-        _, mel, _ = mel_transform(inp, fs)
+        Sd, mel, meld = mel_transform(inp, fs)
+        inp = torch.matmul(Sd,meld)
         #inp, _  = transform_stft(inp)
-        # matplotlib.image.imsave('../save/imgs/stft_new.png', inp)
+        matplotlib.image.imsave('../save/imgs/mel_new.png', inp)
         # print(inp.shape)
         # foo = np.expand_dims(inp, axis=2)
         # aud = np.concatenate((foo, np.zeros(foo.shape), np.zeros(foo.shape)), axis=2)
@@ -51,9 +52,9 @@ def inp_transform(sample):
         # lbl = np.zeros((15))
         # lbl[label] = 1
 
-        for j in range(0, mel.shape[1], 500):
+        for j in range(0, inp.shape[1], 500):
             try:
-                sam = mel[:, j:j + 500]
+                sam = inp[:, j:j + 500]
                 if(sam.shape[1] < 500):
                     sam = librosa.util.pad_center(sam, 500)
                 '''
