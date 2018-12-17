@@ -16,7 +16,7 @@ from utils import progress_bar
 parser = argparse.ArgumentParser(description='PyTorch Accent Classifier')
 parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
 parser.add_argument('--batch_size', default=1, type=int)
-parser.add_argument('--resume', '-r', default=0, type=int, help='resume from checkpoint')
+parser.add_argument('--resume', '-r', default=1, type=int, help='resume from checkpoint')
 args = parser.parse_args()
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -137,6 +137,7 @@ def test(epoch):
         torch.save(state, '../save/checkpoint/ckpt.t7')
         best_acc = acc
 
-for epoch in range(start_epoch, start_epoch + 200):
+for epoch in range(start_epoch, start_epoch + 5):
     train(epoch)
-    test(epoch)
+
+test(epoch)

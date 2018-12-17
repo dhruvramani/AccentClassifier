@@ -37,7 +37,7 @@ def inp_transform(sample):
         inp, fs = read_audio(inp)
         inp = inp.numpy()
         inp = inp.flatten()
-        _, mel = mel_transform(inp, fs)
+        _, mel, _ = mel_transform(inp, fs)
         #inp, _  = transform_stft(inp)
         # matplotlib.image.imsave('../save/imgs/stft_new.png', inp)
         # print(inp.shape)

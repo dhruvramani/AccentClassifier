@@ -2,6 +2,7 @@ import librosa
 import os
 import numpy as np
 import glob
+import torch
 
 N_FFT = 1024
 
@@ -9,7 +10,7 @@ def mel_transform(S, fs=48000):
     mel = librosa.filters.mel(fs, N_FFT)
     meld = torch.DoubleTensor(mel)
     Sd = torch.DoubleTensor(S)
-    return Sd, mel
+    return Sd, mel, meld
 
 def transform_stft(signal, pad=0):
     D = librosa.stft(signal, n_fft=N_FFT)
