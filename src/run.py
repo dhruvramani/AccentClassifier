@@ -14,7 +14,7 @@ from dataset import *
 from utils import progress_bar
 
 parser = argparse.ArgumentParser(description='PyTorch Accent Classifier')
-parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
+parser.add_argument('--lr', default=0.0001, type=float, help='learning rate')
 parser.add_argument('--batch_size', default=1, type=int)
 parser.add_argument('--resume', '-r', default=1, type=int, help='resume from checkpoint')
 args = parser.parse_args()

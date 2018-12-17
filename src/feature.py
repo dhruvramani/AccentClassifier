@@ -8,8 +8,8 @@ N_FFT = 1024
 
 def mel_transform(S, fs=48000):
     mel = librosa.filters.mel(fs, N_FFT)
-    meld = torch.DoubleTensor(mel)
-    Sd = torch.DoubleTensor(S)
+    meld = torch.Tensor(mel)
+    Sd = torch.Tensor(S)
     return Sd, mel, meld
 
 def transform_stft(signal, pad=0):
