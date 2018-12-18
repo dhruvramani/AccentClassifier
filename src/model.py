@@ -40,14 +40,17 @@ class CNNNet(nn.Module):
     def __init__(self, num_classes=15):
         super(CNNNet, self).__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size=7, padding=2),
-            nn.ReLU(inplace=True)5
-            nn.Conv2d(64, 128, kernel_size=5, padding=2),
+            nn.Conv2d(1, 64, 3, padding=1),
+            nn.BatchNorm2d(out_ch),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.Conv2d(64, 128, 3, padding=1),
+            nn.BatchNorm2d(out_ch),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.MaxPool2d(2),
+            nn.Conv2d(128, 256, 3, padding=1),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),
         )
         self.classifier = nn.Sequential(
             nn.Dropout(),
