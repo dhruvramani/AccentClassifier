@@ -119,7 +119,8 @@ class AccentDataset(Dataset):
         self.root_dir = root_dir
         self.transform = transform
         self.batch_size = batch_size
-        self.top_15_langs = ['english', 'spanish', 'arabic', 'mandarin', 'french', 'german', 'korean', 'russian', 'portuguese', 'dutch', 'turkish', 'italian', 'polish', 'japanese', 'vietnamese']
+        # self.top_15_langs = ['english', 'spanish', 'arabic', 'mandarin', 'french', 'german', 'korean', 'russian', 'portuguese', 'dutch', 'turkish', 'italian', 'polish', 'japanese', 'vietnamese']
+        self.top_5_langs = ['english', 'spanish', 'french', 'german', 'russian']
         self.count = 0
     
     def get_data(self):
@@ -127,10 +128,10 @@ class AccentDataset(Dataset):
         audios = []
         while(count < self.batch_size):
             row = self.csv.iloc[[int(i % self.csv.shape[0])]]
-            if(str(row['native_language'].values[0]) in self.top_15_langs):
+            if(str(row['native_language'].values[0]) in self.top_5_langs):
                 filename = row['filename'].values[0]
                 filename = "{}/{}.mp3".format(self.root_dir, filename)
-                audios.append({"audio" : filename, "class" : self.top_15_langs.index(row['native_language'].values[0])})
+                audios.append({"audio" : filename, "class" : self.top_5_langs.index(row['native_language'].values[0])})
                 count += 1
             i += 1
 

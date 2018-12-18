@@ -31,8 +31,8 @@ with open("../save/logs/test_acc.log", "w+") as f:
     pass 
 
 print('==> Preparing data..')
-classes = ('english', 'spanish', 'arabic', 'mandarin', 'french', 'german', 'korean', 'russian', 'portuguese', 'dutch', 'turkish', 'italian', 'polish', 'japanese', 'vietnamese')
-
+# classes = ('english', 'spanish', 'arabic', 'mandarin', 'french', 'german', 'korean', 'russian', 'portuguese', 'dutch', 'turkish', 'italian', 'polish', 'japanese', 'vietnamese')
+classes = ('english', 'spanish', 'french', 'german', 'russian')
 print('==> Building network..')
 net = PrathamNetwork()
 net = net.to(device)
