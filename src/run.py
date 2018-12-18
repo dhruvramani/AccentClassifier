@@ -34,7 +34,7 @@ print('==> Preparing data..')
 classes = ('english', 'spanish', 'arabic', 'mandarin', 'french', 'german', 'korean', 'russian', 'portuguese', 'dutch', 'turkish', 'italian', 'polish', 'japanese', 'vietnamese')
 
 print('==> Building network..')
-net = CNNNet()
+net = PrathamNetwork()
 net = net.to(device)
 if device == 'cuda':
     net = torch.nn.DataParallel(net)
