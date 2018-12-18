@@ -90,3 +90,57 @@ class PrathamNetwork(nn.Module):
         x = F.dropout(x, training=self.training)
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
+
+
+class exp1(nn.Module):
+    def __init__(self):
+        super(featureExtracter,self).__init__()
+        #Mel Spectoram(batch,1,128,500) ->  
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=3, stride=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Conv2d(32, 64, kernel_size=3, stride=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Dropout2d(0.25)
+        )
+        self.classifier = nn.Sequential(
+            nn.Linear(64 * 1 * 1, 128),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(128, 15)
+        )
+
+    def forward(self,x):
+        x = self.features(x)
+        print(x.shape)
+        x = x.view(x.size()[0], 64 * 1 * 1)
+        x = self.classifier(x)
+        return x
+
+class exp2(nn.Module):
+    def __init__(self):
+        super(featureExtracter,self).__init__()
+        #Mel Spectoram(batch,1,128,500) ->  
+        self.features = nn.Sequential(
+            nn.Conv1d(1, 20, 20, padding=3, stride=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool1d(2, stride=1, padding=0),
+            nn.Conv1d(20, 50, 50, padding=3, stride=2),
+            nn.ReLU(inplace=True),
+            nn.MaxPool1d(4, stride=1, padding=0),
+        )
+        self.classifier = nn.Sequential(
+            nn.Linear(64 * 1 * 1, 128),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(128, 15)
+        )
+
+    def forward(self,x):
+        x = self.features(x)
+        print(x.shape)
+        x = x.view(x.size()[0], 64 * 1 * 1)
+        x = self.classifier(x)
+        return x
