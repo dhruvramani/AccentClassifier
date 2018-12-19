@@ -53,12 +53,14 @@ def inp_transform(sample):
                 
         # lbl = np.zeros((15))
         # lbl[label] = 1
-
-        for j in range(0, inp.shape[1], 500):
+        window_size = 128
+        batch = 50
+        for j in range(0, inp.shape[1], window_size):
             try:
-                sam = inp[:, j:j + 500]
-                if(sam.shape[1] < 500):
-                    sam = librosa.util.pad_center(sam, 500)
+
+                sam = inp[:, j:j + window_size]
+                if(sam.shape[1] < window_size):
+                    sam = librosa.util.pad_center(sam, window_size)
                 '''
                 # print(sam.shape)
                 #audio = inp
@@ -74,6 +76,8 @@ def inp_transform(sample):
                 '''
                 aud_sample.append(sam)  
                 class_sample.append(label)
+
+            
             except Exception as e:
                 print(str(e))
                 pass
@@ -95,7 +99,9 @@ def inp_transform(sample):
         #     aud_sample.append(sam)  
         #     class_sample.append(label)
 
-
+    # making batch size uniform (batch,1,n_mel,window_size)
+    aud_sample = aud_sample[:batch]
+    class_sample = class_sample[:batch]
 
     aud_sample = torch.Tensor(aud_sample)
     class_sample = torch.Tensor(class_sample)
@@ -107,7 +113,7 @@ def inp_transform(sample):
 class AccentDataset(Dataset):
     """Accent dataset."""
 
-    def __init__(self, csv_file="/home/nevronas/dataset/accent/speakers_all.csv", root_dir="/home/nevronas/dataset/accent/recordings", batch_size=10, transform=inp_transform):
+    def __init__(self, csv_file="/home/nevronas/dataset/accent/new_train.csv", root_dir="/home/nevronas/dataset/accent/recordings", batch_size=10, transform=inp_transform):
         """
         Args:
             csv_file (string): Path to the csv file.
@@ -120,7 +126,7 @@ class AccentDataset(Dataset):
         self.transform = transform
         self.batch_size = batch_size
         # self.top_15_langs = ['english', 'spanish', 'arabic', 'mandarin', 'french', 'german', 'korean', 'russian', 'portuguese', 'dutch', 'turkish', 'italian', 'polish', 'japanese', 'vietnamese']
-        self.top_5_langs = ['english', 'spanish', 'french', 'german', 'russian']
+        self.top_5_langs = ['english', 'spanish', 'arabic', 'mandarin', 'french']
         self.count = 0
     
     def get_data(self):
@@ -147,4 +153,15 @@ class AccentDataset(Dataset):
             sample = self.transform(sample)
 
         return sample
+
+if __name__ == '__main__':
+    dataset = AccentDataset()
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=True)
+    dataloader = iter(dataloader)
+    print(len(dataloader))
+    for batch_idx in range(len(dataloader)):
+        (inputs, targets) = next(dataloader)
+        inputs, targets = inputs[0], targets[0]
+        print(inputs.shape,targets.shape)
+
 

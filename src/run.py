@@ -32,9 +32,9 @@ with open("../save/logs/test_acc.log", "w+") as f:
 
 print('==> Preparing data..')
 # classes = ('english', 'spanish', 'arabic', 'mandarin', 'french', 'german', 'korean', 'russian', 'portuguese', 'dutch', 'turkish', 'italian', 'polish', 'japanese', 'vietnamese')
-classes = ('english', 'spanish', 'french', 'german', 'russian')
+classes = ('english', 'spanish', 'arabic', 'mandarin', 'french')
 print('==> Building network..')
-net = PrathamNetwork()
+net = exp3()
 net = net.to(device)
 if device == 'cuda':
     net = torch.nn.DataParallel(net)
@@ -107,6 +107,10 @@ def test(epoch):
     test_loss = 0
     correct = 0
     total = 0
+
+    testset = AccentDataset(csv_file="/home/nevronas/dataset/accent/new_test.csv")
+    dataloader = torch.utils.data.DataLoader(testset, batch_size=args.batch_size, shuffle=True)
+    dataloader = iter(dataloader)
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(dataloader):
             _, outputs = net(inputs)
