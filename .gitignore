@@ -5,6 +5,12 @@ __pycache__/
 *$py.class
 
 save/
+misc/dialectdetect/audio/
+misc/dialectdetect/img/
+misc/dialectdetect/logs/
+misc/dialectdetect/models/
+misc/dialectdetect/presentation/
+misc/dialectdetect/notebook.ipynb
 # C extensions
 *.so
 
