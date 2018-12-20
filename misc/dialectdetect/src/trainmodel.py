@@ -104,7 +104,7 @@ def segment_one(mfcc):
     :return (numpy array): Segmented MFCC array
     '''
     segments = []
-    for start in xrange(0, mfcc.shape[1] / COL_SIZE):
+    for start in range(0, int(mfcc.shape[1] / COL_SIZE)):
         segments.append(mfcc[:, start * COL_SIZE:(start + 1) * COL_SIZE])
     return(np.array(segments))
 
@@ -177,7 +177,7 @@ def train_model(X_train,y_train,X_validation,y_validation, batch_size=128): #64
 
     # Fit model using ImageDataGenerator
     model.fit_generator(datagen.flow(X_train, y_train, batch_size=batch_size),
-                        steps_per_epoch=len(X_train) / 32
+                        steps_per_epoch=int(len(X_train) / 32)
                         , epochs=EPOCHS,
                         callbacks=[es,tb], validation_data=(X_validation,y_validation))
 
