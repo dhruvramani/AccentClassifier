@@ -12,6 +12,10 @@ def mel_transform(S, fs=48000):
     Sd = torch.Tensor(S)
     return Sd, mel, meld
 
+def mfcc_transform(signal):
+    mfcc = librosa.feature.mfcc(signal)
+    return mfcc
+    
 def transform_stft(signal, pad=0):
     D = librosa.stft(signal, n_fft=N_FFT)
     S, phase = librosa.magphase(D)

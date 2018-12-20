@@ -11,7 +11,7 @@ import torch.backends.cudnn as cudnn
 
 from model import *
 from dataset import *
-from utils import progress_bar
+from utils import *
 
 parser = argparse.ArgumentParser(description='PyTorch Accent Classifier')
 parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
@@ -34,7 +34,8 @@ print('==> Preparing data..')
 # classes = ('english', 'spanish', 'arabic', 'mandarin', 'french', 'german', 'korean', 'russian', 'portuguese', 'dutch', 'turkish', 'italian', 'polish', 'japanese', 'vietnamese')
 classes = ('english', 'spanish', 'arabic', 'mandarin', 'french')
 print('==> Building network..')
-net = exp3()
+# net = exp3() #22 ~ 4Epoch
+net  = exp3()
 net = net.to(device)
 if device == 'cuda':
     net = torch.nn.DataParallel(net)
@@ -82,6 +83,7 @@ def train(epoch):
         _, predicted = y_pred.max(1)
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
+        #print(accuracy(y_pred, targets))
 
         with open("../save/logs/train_loss.log", "a+") as lfile:
             lfile.write("{}\n".format(train_loss / total))
