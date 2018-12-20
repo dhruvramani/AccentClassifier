@@ -92,7 +92,7 @@ def make_segments(mfccs,labels):
     segments = []
     seg_labels = []
     for mfcc,label in zip(mfccs,labels):
-        for start in range(0, mfcc.shape[1] / COL_SIZE):
+        for start in range(0, int(mfcc.shape[1] / COL_SIZE)):
             segments.append(mfcc[:, start * COL_SIZE:(start + 1) * COL_SIZE])
             seg_labels.append(label)
     return(segments, seg_labels)
