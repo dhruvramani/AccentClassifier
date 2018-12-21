@@ -13,6 +13,7 @@ from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Flatten
 from keras.layers.convolutional import MaxPooling2D, Conv2D
+from keras.layers.normalization import BatchNormalization
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import EarlyStopping, TensorBoard
 import tensorflow as tf
@@ -154,10 +155,31 @@ def train_model(X_train,y_train,X_validation,y_validation, batch_size=128): #64
     model.add(Conv2D(64,kernel_size=(3,3), activation='relu'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.25))
+    model.add(BatchNormalization())
+    model.add(Conv2D(128,kernel_size=(3,3), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+    model.add(BatchNormalization())
+    # model.add(Flatten())
+    # model.add(Dense(128, activation='relu'))
+    # model.add(Dropout(0.5))
+    # model.add(BatchNormalization())
+    # model.add(Conv2D(64, kernel_size=(3,3), activation='relu'))
+    # model.add(BatchNormalization())
+    # model.add(MaxPooling2D(pool_size=(2,2)))
+    # model.add(Dropout(0.25))
+    # model.add(Conv2D(128, kernel_size=(3,3), activation='relu'))
+    # model.add(BatchNormalization())
+    # model.add(Conv2D(128, kernel_size=(3,3), activation='relu'))
+    # model.add(BatchNormalization())
+    # model.add(MaxPooling2D(pool_size=(2,2)))
+   
+    
 
     model.add(Flatten())
-    model.add(Dense(128, activation='relu'))
+    model.add(Dense(256, activation='relu'))
     model.add(Dropout(0.5))
+
 
     model.add(Dense(num_classes, activation='softmax'))
     model.compile(loss='categorical_crossentropy',
@@ -191,6 +213,7 @@ def save_model(model, model_filename):
     :return: None
     '''
     model.save('../models/{}.h5'.format(model_filename))  # creates a HDF5 file 'my_model.h5'
+    model.save_weights('../models/{}_weights.h5'.format(model_filename))
 
 if __name__ == '__main__':
     '''
@@ -243,6 +266,7 @@ if __name__ == '__main__':
 
     # Train model
     model = train_model(np.array(X_train), np.array(y_train), np.array(X_validation),np.array(y_validation))
+    # model = train_model(np.array(X_train), np.array(y_train), np.array(X_test),np.array(y_test))
 
     # Make predictions on full X_test MFCCs
     y_predicted = accuracy.predict_class_all(create_segmented_mfccs(X_test), model)

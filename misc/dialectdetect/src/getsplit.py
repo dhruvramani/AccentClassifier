@@ -4,6 +4,8 @@ from sklearn.model_selection import train_test_split
 import librosa
 import numpy as np
 
+N_FFT = 1024
+
 def get_wav(language_num):
     '''
     Load wav file from disk and down-samples to RATE
@@ -21,6 +23,26 @@ def to_mfcc(wav):
     '''
     return(librosa.feature.mfcc(y=wav, sr=24000, n_mfcc=13))
 
+def mel_transform(S, fs=48000):
+    mel = librosa.filters.mel(fs, N_FFT)
+    return  mel # shit sors
+
+def transform_stft(signal, pad=0):
+    D = librosa.stft(signal, n_fft=N_FFT)
+    S, phase = librosa.magphase(D)
+    S = np.log1p(S)
+    if(pad):
+        S = librosa.util.pad_center(S, pad)
+    return S, phase
+
+def to_mel(signal):
+    signal = signal.flatten()
+    signal, _ = transform_stft(signal)
+    mel = mel_transform(signal)
+    signal = np.matmul(mel, signal) # sd is troch tensor
+    print(signal.shape)
+    return signal
+
 def filter_df(df):
     '''
     Function to filter audio files based on df columns
@@ -36,11 +58,11 @@ def filter_df(df):
     english,englishy = [],[]
     
     for i in range(79):
-        english.append(to_mfcc(get_wav("english"+str(i+1))))
+        english.append(to_mel(get_wav("english"+str(i+1))))
         englishy.append("english")
-        mandarin.append(to_mfcc(get_wav("mandarin"+str(i+1))))
+        mandarin.append(to_mel(get_wav("mandarin"+str(i+1))))
         mandariny.append("mandarin")
-        arabic.append(to_mfcc(get_wav("arabic"+str(i+1))))
+        arabic.append(to_mel(get_wav("arabic"+str(i+1))))
         arabicy.append("arabic")
 
     val = english + arabic + mandarin
