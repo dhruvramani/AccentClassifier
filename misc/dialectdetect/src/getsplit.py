@@ -59,11 +59,11 @@ def filter_df(df):
     
     for i in range(79):
         english.append(to_mel(get_wav("english"+str(i+1))))
-        englishy.append("english")
+        englishy.append(1)
         mandarin.append(to_mel(get_wav("mandarin"+str(i+1))))
-        mandariny.append("mandarin")
+        mandariny.append(2)
         arabic.append(to_mel(get_wav("arabic"+str(i+1))))
-        arabicy.append("arabic")
+        arabicy.append(3)
 
     val = english + arabic + mandarin
     val2 = englishy + arabicy + mandariny

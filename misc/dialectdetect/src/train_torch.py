@@ -12,6 +12,17 @@ from sklearn.model_selection import train_test_split
 from collections import Counter
 from torch.utils.data import Dataset, DataLoader
 from utils import *
+import pandas as pd
+from collections import Counter
+import sys
+import getsplit
+#from keras import utils
+import accuracy
+import multiprocessing
+import librosa
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 
 DEBUG = True
 SILENCE_THRESHOLD = .01
@@ -19,6 +30,7 @@ RATE = 24000
 N_MFCC = 13
 COL_SIZE = 30
 EPOCHS = 10#35#250
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 class AccentDataset(Dataset):
     """Accent dataset."""
@@ -31,16 +43,19 @@ class AccentDataset(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        self.X_train = X_train
-        self.y_train = y_train
+        self.X_train = np.array(X_train)
+        self.y_train = np.array(y_train)
+        self.X_train = np.expand_dims(X_train,axis = 1)
         self.count = 0
 
     def __len__(self):
-        return Counter(y_train)
+        return int(self.y_train.shape[0])
 
     def __getitem__(self, idx):
-        sample = (torch.Tensor(X_train[self.count]), torch.Tensor(y_train[self.count])
-        self.count += 1
+        print(self.X_train.shape, self.y_train.shape)
+
+        sample = (torch.Tensor(self.X_train[self.count]), torch.Tensor(self.y_train[self.count]))
+        self.count +=1
         return sample
 
 class AlexNet(nn.Module):
@@ -75,7 +90,7 @@ class AlexNet(nn.Module):
         x = self.classifier(x)
         return x
 
- def make_segments(mfccs,labels):
+def make_segments(mfccs,labels):
     '''
     Makes segments of mfccs and attaches them to the labels
     :param mfccs: list of mfccs
@@ -115,6 +130,10 @@ def create_segmented_mfccs(X_train):
 
 net = AlexNet()
 criterion = nn.CrossEntropyLoss(reduction='sum') # To calculate the average later
+net = net.to(device)
+if device == 'cuda':
+    net = torch.nn.DataParallel(net)
+    cudnn.benchmark = True
 
 def train(epoch, X_train, y_train):
     
@@ -127,7 +146,7 @@ def train(epoch, X_train, y_train):
     params = net.parameters()
     optimizer = optim.Adam(params, lr=0.001)#, momentum=0.9)#, weight_decay=5e-4)
 
-    for batch_idx in range(start_step, len(dataloader)):
+    for batch_idx in range(len(dataloader)):
         (inputs, targets) = next(dataloader)
         inputs, targets = inputs[0], targets[0] # batch_size == 1 ~= 1 sample
         targets = targets.type(torch.LongTensor)

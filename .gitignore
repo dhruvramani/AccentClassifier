@@ -11,6 +11,7 @@ misc/dialectdetect/logs/
 misc/dialectdetect/models/
 misc/dialectdetect/presentation/
 misc/dialectdetect/notebook.ipynb
+misc/keras2pytorch/
 # C extensions
 *.so
 
