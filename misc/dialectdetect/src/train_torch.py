@@ -30,7 +30,7 @@ RATE = 24000
 N_MFCC = 13
 COL_SIZE = 30
 EPOCHS = 10#35#250
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class AccentDataset(Dataset):
     """Accent dataset."""
@@ -46,17 +46,24 @@ class AccentDataset(Dataset):
         self.X_train = np.array(X_train)
         self.y_train = np.array(y_train)
         self.X_train = np.expand_dims(X_train,axis = 1)
+        self.X_tens = torch.from_numpy(self.X_train)
+        self.y_tens = torch.from_numpy(self.y_train)
         self.count = 0
 
     def __len__(self):
         return int(self.y_train.shape[0])
 
     def __getitem__(self, idx):
+        '''
         print(self.X_train.shape, self.y_train.shape)
 
         sample = (torch.Tensor(self.X_train[self.count]), torch.Tensor(self.y_train[self.count]))
         self.count +=1
         return sample
+        '''
+        return self.X_tens[idx].type(torch.FloatTensor), self.y_tens[idx].type(torch.LongTensor)
+
+        # return torch.from_numpy(self.X_train[idx]), torch.from_numpy(np.asarray(list(self.y_train[idx]))).long()
 
 class AlexNet(nn.Module):
     def __init__(self, num_classes=3):
@@ -77,7 +84,7 @@ class AlexNet(nn.Module):
             nn.BatchNorm2d(128),
         )
         self.classifier = nn.Sequential(
-            nn.Linear(256 * 3 * 3, 256),
+            nn.Linear(128*14*2, 256),
             nn.ReLU(inplace=True),
             nn.Dropout(),
             nn.Linear(256, num_classes)
@@ -86,9 +93,17 @@ class AlexNet(nn.Module):
     def forward(self, x):
         x = self.features(x)
         print(x.shape)
-        x = x.view(x.size()[0], 256 * 3 * 3)
+        x = x.view(x.size()[0], 128*14*2)
         x = self.classifier(x)
         return x
+
+def collate_fn(data):
+    data = list(filter(lambda x: type(x[1]) != int, data))
+    audios, captions = zip(*data)
+    data = None
+    del data
+    audios = torch.stack(audios, 0)
+    return audios, captions
 
 def make_segments(mfccs,labels):
     '''
@@ -103,7 +118,7 @@ def make_segments(mfccs,labels):
         for start in range(0, int(mfcc.shape[1] / COL_SIZE)):
             segments.append(mfcc[:, start * COL_SIZE:(start + 1) * COL_SIZE])
             seg_labels.append(label)
-    return(segments, seg_labels)
+    return (segments, seg_labels)
 
 
 def segment_one(mfcc):
@@ -129,11 +144,13 @@ def create_segmented_mfccs(X_train):
     return(segmented_mfccs)
 
 net = AlexNet()
-criterion = nn.CrossEntropyLoss(reduction='sum') # To calculate the average later
+criterion = nn.CrossEntropyLoss() # To calculate the average later
 net = net.to(device)
-if device == 'cuda':
+'''
+if torch.cuda.is_available():
     net = torch.nn.DataParallel(net)
     cudnn.benchmark = True
+'''
 
 def train(epoch, X_train, y_train):
     
@@ -147,16 +164,16 @@ def train(epoch, X_train, y_train):
     optimizer = optim.Adam(params, lr=0.001)#, momentum=0.9)#, weight_decay=5e-4)
 
     for batch_idx in range(len(dataloader)):
-        (inputs, targets) = next(dataloader)
-        inputs, targets = inputs[0], targets[0] # batch_size == 1 ~= 1 sample
-        targets = targets.type(torch.LongTensor)
+        inputs, targets = next(dataloader)
+        #inputs, targets = inputs[0], targets[0] # batch_size == 1 ~= 1 sample
+        #targets = targets.type(torch.LongTensor)
         inputs, targets = inputs.to(device), targets.to(device)
 
         # NOTE : Main optimizing here
         optimizer.zero_grad()
         y_pred = net(inputs)
         loss = criterion(y_pred, targets)
-        loss = loss / inputs.shape[0]
+        # loss = loss / inputs.shape[0]
         loss.backward()
         optimizer.step()
 
@@ -208,12 +225,12 @@ if __name__ == '__main__':
     X_train, _, y_train, _ = train_test_split(X_train, y_train, test_size=0)
     
     #Trying some shit
-    for epoch in range(1,5):
+    for epoch in range(10):
     	train(epoch, X_train, y_train)
     # model = train_model(np.array(X_train), np.array(y_train), np.array(X_test),np.array(y_test))
 
     # Make predictions on full X_test MFCCs
-    y_predicted = accuracy.predict_class_all(create_segmented_mfccs(X_test), model)
+    y_predicted = accuracy.predict_class_all(create_segmented_mfccs(X_test), net)
 
     # Print statistics
     print(train_count)
