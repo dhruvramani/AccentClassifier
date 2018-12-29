@@ -10,6 +10,7 @@ misc/dialectdetect/img/
 misc/dialectdetect/logs/
 misc/dialectdetect/models/
 misc/dialectdetect/presentation/
+misc/dialectdetect/save/
 misc/dialectdetect/notebook.ipynb
 misc/keras2pytorch/
 # C extensions

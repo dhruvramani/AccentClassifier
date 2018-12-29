@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from collections import Counter
 from sklearn.model_selection import train_test_split
 
-from segmenation import *
+from segmentation import *
 from utils import *
 from dataset import *
 from model import *

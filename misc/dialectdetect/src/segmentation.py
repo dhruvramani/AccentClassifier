@@ -1,7 +1,7 @@
 import numpy as np
 
 # Segmentation for Training 
-def make_segments(mel,labels, COL_SIZE = 30):
+def make_segments(mels,labels, COL_SIZE = 30):
     '''
     Makes segments of mel and attaches them to the labels
     :param mels: list of mels
