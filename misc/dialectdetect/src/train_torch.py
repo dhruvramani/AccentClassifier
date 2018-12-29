@@ -3,157 +3,53 @@ import os
 import torch
 import argparse
 import numpy as np
+import pandas as pd
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
-from sklearn.model_selection import train_test_split
+from torch.utils.data import DataLoader
 from collections import Counter
-from torch.utils.data import Dataset, DataLoader
-from utils import *
-import pandas as pd
-from collections import Counter
-import sys
-import getsplit
-#from keras import utils
-import accuracy
-import multiprocessing
-import librosa
-import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler
 
-DEBUG = True
-SILENCE_THRESHOLD = .01
-RATE = 24000
-N_MFCC = 13
-COL_SIZE = 30
-EPOCHS = 10#35#250
+from segmenation import *
+from utils import *
+from dataset import *
+from model import *
+from feature import * 
+import accuracy
+
+parser = argparse.ArgumentParser(description='PyTorch Accent Classifier')
+parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
+parser.add_argument('--batch_size', default=1, type=int)
+parser.add_argument('--epochs', default=10, type=int, help='number of epochs to run')
+parser.add_argument('--resume', '-r', default=0, type=int, help='resume from checkpoint')
+args = parser.parse_args()
+
+FILE_NAME = 'data.csv'
+
+best_acc, start_epoch, start_step = 0, 0, 0  # best test accuracy, start from epoch 0 or last checkpoint epoch
+
+if args.resume:
+    if(os.path.isfile('../save/network.ckpt')):
+        net.load_state_dict(torch.load('../save/network.ckpt'))
+        print("=> Network : loaded")
+    
+    if(os.path.isfile("../save/info.txt")):
+        with open("../save/info.txt", "r") as f:
+            start_epoch, start_step = (int(i) for i in str(f.read()).split(" "))
+            print("=> Network : prev epoch found")
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-class AccentDataset(Dataset):
-    """Accent dataset."""
-
-    def __init__(self, X_train, y_train):
-        """
-        Args:
-            csv_file (string): Path to the csv file.
-            root_dir (string): Directory with all the recordings.
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
-        """
-        self.X_train = np.array(X_train)
-        self.y_train = np.array(y_train)
-        self.X_train = np.expand_dims(X_train,axis = 1)
-        self.X_tens = torch.from_numpy(self.X_train)
-        self.y_tens = torch.from_numpy(self.y_train)
-        self.count = 0
-
-    def __len__(self):
-        return int(self.y_train.shape[0])
-
-    def __getitem__(self, idx):
-        '''
-        print(self.X_train.shape, self.y_train.shape)
-
-        sample = (torch.Tensor(self.X_train[self.count]), torch.Tensor(self.y_train[self.count]))
-        self.count +=1
-        return sample
-        '''
-        return self.X_tens[idx].type(torch.FloatTensor), self.y_tens[idx].type(torch.LongTensor)
-
-        # return torch.from_numpy(self.X_train[idx]), torch.from_numpy(np.asarray(list(self.y_train[idx]))).long()
-
-class AlexNet(nn.Module):
-    def __init__(self, num_classes=3):
-        super(AlexNet, self).__init__()
-        self.features = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2),
-            nn.Conv2d(32, 64, kernel_size=3),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2),
-            nn.Dropout(0.25),
-            nn.BatchNorm2d(64),
-            nn.Conv2d(64, 128, kernel_size=3),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2),
-            nn.Dropout(0.25),
-            nn.BatchNorm2d(128),
-        )
-        self.classifier = nn.Sequential(
-            nn.Linear(128*14*2, 256),
-            nn.ReLU(inplace=True),
-            nn.Dropout(),
-            nn.Linear(256, num_classes)
-        )
-
-    def forward(self, x):
-        x = self.features(x)
-        print(x.shape)
-        x = x.view(x.size()[0], 128*14*2)
-        x = self.classifier(x)
-        return x
-
-def collate_fn(data):
-    data = list(filter(lambda x: type(x[1]) != int, data))
-    audios, captions = zip(*data)
-    data = None
-    del data
-    audios = torch.stack(audios, 0)
-    return audios, captions
-
-def make_segments(mfccs,labels):
-    '''
-    Makes segments of mfccs and attaches them to the labels
-    :param mfccs: list of mfccs
-    :param labels: list of labels
-    :return (tuple): Segments with labels
-    '''
-    segments = []
-    seg_labels = []
-    for mfcc,label in zip(mfccs,labels):
-        for start in range(0, int(mfcc.shape[1] / COL_SIZE)):
-            segments.append(mfcc[:, start * COL_SIZE:(start + 1) * COL_SIZE])
-            seg_labels.append(label)
-    return (segments, seg_labels)
-
-
-def segment_one(mfcc):
-    '''
-    Creates segments from on mfcc image. If last segments is not long enough to be length of columns divided by COL_SIZE
-    :param mfcc (numpy array): MFCC array
-    :return (numpy array): Segmented MFCC array
-    '''
-    segments = []
-    for start in range(0, int(mfcc.shape[1] / COL_SIZE)):
-        segments.append(mfcc[:, start * COL_SIZE:(start + 1) * COL_SIZE])
-    return(np.array(segments))
-
-def create_segmented_mfccs(X_train):
-    '''
-    Creates segmented MFCCs from X_train
-    :param X_train: list of MFCCs
-    :return: segmented mfccs
-    '''
-    segmented_mfccs = []
-    for mfcc in X_train:
-        segmented_mfccs.append(segment_one(mfcc))
-    return(segmented_mfccs)
-
+print('==> Building network..')
 net = AlexNet()
-criterion = nn.CrossEntropyLoss() # To calculate the average later
+criterion = nn.CrossEntropyLoss()
 net = net.to(device)
-'''
-if torch.cuda.is_available():
-    net = torch.nn.DataParallel(net)
-    cudnn.benchmark = True
-'''
 
 def train(epoch, X_train, y_train):
-    
+
     trainset = AccentDataset(X_train, y_train)
     dataloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True)
     dataloader = iter(dataloader)
@@ -161,19 +57,16 @@ def train(epoch, X_train, y_train):
     
     train_loss, correct, total = 0, 0, 0
     params = net.parameters()
-    optimizer = optim.Adam(params, lr=0.001)#, momentum=0.9)#, weight_decay=5e-4)
+    optimizer = optim.Adam(params, lr = args.lr)#, momentum=0.9)#, weight_decay=5e-4)
 
     for batch_idx in range(len(dataloader)):
         inputs, targets = next(dataloader)
-        #inputs, targets = inputs[0], targets[0] # batch_size == 1 ~= 1 sample
-        #targets = targets.type(torch.LongTensor)
         inputs, targets = inputs.to(device), targets.to(device)
 
         # NOTE : Main optimizing here
         optimizer.zero_grad()
         y_pred = net(inputs)
         loss = criterion(y_pred, targets)
-        # loss = loss / inputs.shape[0]
         loss.backward()
         optimizer.step()
 
@@ -182,75 +75,60 @@ def train(epoch, X_train, y_train):
         _, predicted = y_pred.max(1)
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
-        #print(accuracy(y_pred, targets))
+
+        with open("../save/logs/train_loss.log", "a+") as lfile:
+            lfile.write("{}\n".format(train_loss / total))
+
+        with open("../save/logs/train_acc", "a+") as afile:
+            afile.write("{}\n".format(correct / total))
 
         gc.collect()
         torch.cuda.empty_cache()
 
+        torch.save(net.state_dict(), '../save/network.ckpt')
+
+        with open("../save/info.txt", "w+") as f:
+            f.write("{} {}".format(epoch, batch_idx))
+
         progress_bar(batch_idx, len(dataloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
 
-if __name__ == '__main__':
-    '''
-        Console command example:
-        python trainmodel.py bio_metadata.csv model50
-        '''
-
-    # Load arguments
-    file_name = sys.argv[1]
-    model_filename = sys.argv[2]
+        start_step = 0
 
 
+print('==> Preparing data..')
+# Load metadata
+df = pd.read_csv(FILE_NAME)
 
-
-
-
-
-
-
-
-
-
-
+# Filter metadata to retrieve only files desired
+filtered_df = filter_df(df)
+# Train test split
+X_train, X_test, y_train, y_test = split_people(filtered_df)
     
+# Get statistics
+train_count = Counter(y_train)
+test_count =  Counter(y_test)
 
-    # Load metadata
-    df = pd.read_csv(file_name)
 
-    # Filter metadata to retrieve only files desired
-    filtered_df = getsplit.filter_df(df)
+print('==> Creatting segments..')
+# Create segments
+X_train, y_train = make_segments(X_train, y_train)
 
-    # Get resampled wav files using multiprocessing
-    if DEBUG:
-        print('loading wav files')
-
-    # Train test split
-    X_train, X_test, y_train, y_test = getsplit.split_people(filtered_df)
+# Randomize training segments
+X_train, _, y_train, _ = train_test_split(X_train, y_train, test_size=0)
     
-    # Get statistics
-    train_count = Counter(y_train)
-    test_count =  Counter(y_test)
-    
-    # Create segments 
-    if DEBUG:
-        print('converting to segments')
-    X_train, y_train = make_segments(X_train, y_train)
+#Training
+for epoch in range(start_epoch, start_epoch + args.epochs):
+    train(epoch, X_train, y_train)
 
-    # Randomize training segments
-    X_train, _, y_train, _ = train_test_split(X_train, y_train, test_size=0)
-    
-    #Trying some shit
-    for epoch in range(10):
-    	train(epoch, X_train, y_train)
-    # model = train_model(np.array(X_train), np.array(y_train), np.array(X_test),np.array(y_test))
 
-    # Make predictions on full X_test MFCCs
-    y_predicted = accuracy.predict_class_all(create_segmented_mfccs(X_test), net)
+print('==> Testing network..')
+# Make predictions on full X_test mels
+y_predicted = accuracy.predict_class_all(create_segmented_mels(X_test), net)
 
-    # Print statistics
-    print(train_count)
-    print(test_count)
-    # print( acc_to_beat)
-    print(np.sum(accuracy.confusion_matrix(y_predicted, y_test),axis=1))
-    print(accuracy.confusion_matrix(y_predicted, y_test))
-    print(accuracy.get_accuracy(y_predicted,y_test))
+# Print statistics
+print(train_count)
+print(test_count)
+print(np.sum(accuracy.confusion_matrix(y_predicted, y_test),axis=1))
+print(accuracy.confusion_matrix(y_predicted, y_test))
+print(accuracy.get_accuracy(y_predicted,y_test))
 
