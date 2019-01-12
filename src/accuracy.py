@@ -12,7 +12,7 @@ def predict_class_audio(MFCCs, model):
     :return: Predicted class of MFCC segment group
     '''
     print(MFCCs.shape)
-    MFCCs = MFCCs.reshape(1,MFCCs.shape[0],MFCCs.shape[1])
+    MFCCs = MFCCs.reshape(MFCCs.shape[0],1,MFCCs.shape[1],MFCCs.shape[2])
     MFCCs = torch.from_numpy(MFCCs).type(torch.FloatTensor)
     MFCCs = MFCCs.to(device)
     out = model(MFCCs)
