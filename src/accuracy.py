@@ -1,7 +1,6 @@
 from collections import Counter
 import numpy as np
 import torch
-from sklearn.metrics import confusion_matrix as cm
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def predict_class_audio(MFCCs, model):
@@ -11,7 +10,6 @@ def predict_class_audio(MFCCs, model):
     :param model: Trained model
     :return: Predicted class of MFCC segment group
     '''
-    print(MFCCs.shape)
     MFCCs = MFCCs.reshape(MFCCs.shape[0],1,MFCCs.shape[1],MFCCs.shape[2])
     MFCCs = torch.from_numpy(MFCCs).type(torch.FloatTensor)
     MFCCs = MFCCs.to(device)
@@ -54,19 +52,12 @@ def confusion_matrix(y_predicted,y_test):
     y_pred = []
     for i in range(len(y_test)):
         y_pred.append(y_predicted[i].cpu().item())
-     
     # print(y_test, y_predicted, y_pred)
-    # print(cm(y_test, y_pred))
-    acc = 0
     y_test , y_predicted = y_test, y_pred
-    for i in range(len(y_test)):
-        if(y_test[i]==y_predicted[i]):
-            acc += 1
-    print(acc, len(y_test))
     confusion_matrix = np.zeros((len(y_test),len(y_test)),dtype=int )
     for index, predicted in enumerate(y_pred):
         confusion_matrix[np.argmax(y_test[index])][predicted] += 1
-    return(acc/len(y_test))
+    return(confusion_matrix)
 
 def get_accuracy(y_predicted,y_test):
     '''
