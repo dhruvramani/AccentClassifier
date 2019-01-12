@@ -42,7 +42,7 @@ if(args.preparedata):
     train_count = Counter(y_train)
     test_count =  Counter(y_test)
     print('==> Creatting segments..')
-    X_train, y_train = make_segments(X_train, y_train)
+    X_train, y_train = make_segments(X_train, y_train, args.colsize)
     X_train, _, y_train, _ = train_test_split(X_train, y_train, test_size=0)
 
     print("==> Saving dataset..")
@@ -68,7 +68,7 @@ if args.resume:
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 print('==> Building network..')
-net = RowCNN()
+net = RowCNN(split_size = args.colsize)
 criterion = nn.CrossEntropyLoss()
 net = net.to(device)
 
@@ -148,7 +148,7 @@ for epoch in range(start_epoch, start_epoch + args.epochs):
 
 print('==> Testing network..')
 # Make predictions on full X_test mels
-y_predicted = accuracy.predict_class_all(create_segmented_mels(X_test), net)
+y_predicted = accuracy.predict_class_all(create_segmented_mels(X_test), net, args.colsize)
 
 # Print statistics
 print(train_count)
