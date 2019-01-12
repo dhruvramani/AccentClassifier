@@ -36,5 +36,5 @@ def create_segmented_mels(X_train, COL_SIZE = 120):
     '''
     segmented_mels = []
     for mel in X_train:
-        segmented_mels.append(segment_one(mel), COL_SIZE)
+        segmented_mels.append(segment_one(mel, COL_SIZE))
     return(segmented_mels)
