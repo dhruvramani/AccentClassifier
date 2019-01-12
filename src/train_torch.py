@@ -27,6 +27,7 @@ parser.add_argument('--batch_size', default=1, type=int)
 parser.add_argument('--epochs', default=10, type=int, help='number of epochs to run')
 parser.add_argument('--resume', '-r', default=0, type=int, help='resume from checkpoint')
 parser.add_argument('--preparedata', type=bool, default=False, help='Recreate the dataset.')
+parser.add_argument('--colsize', type=int, default=120, help='Column size for segmentation')
 args = parser.parse_args()
 
 FILE_NAME = 'data.csv'

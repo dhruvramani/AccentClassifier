@@ -35,7 +35,7 @@ class AlexNet(nn.Module):
 
 
 class RowCNN(nn.Module):
-    def __init__(self, num_classes=3, split_size=120):
+    def __init__(self, num_classes=3, split_size=args.colsize):
         super(RowCNN, self).__init__()
         self.window_sizes = [5, 10, 20]
         self.n_filters = 32
