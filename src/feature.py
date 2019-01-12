@@ -1,8 +1,10 @@
-import pandas as pd
-import sys
-from sklearn.model_selection import train_test_split
 import librosa
+import os
 import numpy as np
+import glob
+import torch
+import pandas as pd
+from sklearn.model_selection import train_test_split
 
 N_FFT = 1024
 
@@ -12,7 +14,7 @@ def get_wav(language_num):
     :param language_num (list): list of file names
     :return (numpy array): Down-sampled wav file
     '''
-    y, sr = librosa.load('../audio/{}.wav'.format(language_num))
+    y, sr = librosa.load('/home/nevronas/dataset/accent/recordings/{}.wav'.format(language_num))
     return(librosa.core.resample(y=y,orig_sr=sr,target_sr=24000, scale=True))
 
 def to_mfcc(wav):
@@ -53,17 +55,45 @@ def filter_df(df):
     '''
 
     # Example to filter arabic, mandarin, and english and limit to 73 audio files
+    df = pd.read_csv('data.csv')
+    LIMIT, GENDER = 74, 'female'
+
     arabic,arabicy = [],[]
     mandarin,mandariny = [],[]
     english,englishy = [],[]
     
-    for i in range(79):
-        english.append(to_mel(get_wav("english"+str(i+1))))
-        englishy.append(1)
-        mandarin.append(to_mel(get_wav("mandarin"+str(i+1))))
-        mandariny.append(2)
-        arabic.append(to_mel(get_wav("arabic"+str(i+1))))
-        arabicy.append(0)
+    a,e,m =0,0,0
+    for i in range(df.shape[0]):
+        row = df.iloc[[i]]
+        try:
+            if(str(row['sex']).split()[1] == GENDER):
+                file = str(row['language_num']).split()[1]
+                if(file[0] == 'a' and a < LIMIT):
+                    arabic.append(to_mel(get_wav(file)))
+                    arabicy.append(0)
+                    a+=1
+
+                elif(file[0] == 'e' and e < LIMIT):
+                    english.append(to_mel(get_wav(file)))
+                    englishy.append(1)
+                    e+=1
+
+                elif(file[0] == 'm' and m < LIMIT):
+                    mandarin.append(to_mel(get_wav(file)))
+                    mandariny.append(2)
+                    m+=1
+        except Exception as e:
+            print(str(e))
+
+
+
+    # for i in range(79):
+    #     english.append(to_mel(get_wav("english"+str(i+1))))
+    #     englishy.append(1)
+    #     mandarin.append(to_mel(get_wav("mandarin"+str(i+1))))
+    #     mandariny.append(2)
+    #     arabic.append(to_mel(get_wav("arabic"+str(i+1))))
+    #     arabicy.append(0)
 
     val = english + arabic + mandarin
     val2 = englishy + arabicy + mandariny
@@ -78,15 +108,3 @@ def split_people(df,test_size=0.2):
     :return X_train, X_test, y_train, y_test (tuple): Xs are list of df['language_num'] and Ys are df['native_language']
     '''
     return train_test_split(df['wav'],df['native_language'],test_size=test_size,random_state=1234)
-
-
-if __name__ == '__main__':
-    '''
-    Console command example:
-    python bio_data.csv
-    '''
-    csv_file = sys.argv[1]
-    df = pd.read_csv(csv_file)
-    # print(df.values[0])
-    filtered_df = filter_df(df)
-    print(split_people(filtered_df))
