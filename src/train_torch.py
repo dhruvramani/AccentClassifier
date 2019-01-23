@@ -26,8 +26,8 @@ parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
 parser.add_argument('--batch_size', default=1, type=int)
 parser.add_argument('--epochs', default=10, type=int, help='number of epochs to run')
 parser.add_argument('--resume', '-r', default=0, type=int, help='resume from checkpoint')
-parser.add_argument('--preparedata', type=bool, default=False, help='Recreate the dataset.')
-parser.add_argument('--colsize', type=int, default=120, help='Column size for segmentation')
+parser.add_argument('--preparedata', type=bool, default=1, help='Recreate the dataset.')
+parser.add_argument('--colsize', type=int, default=200, help='Column size for segmentation')
 args = parser.parse_args()
 
 FILE_NAME = 'data.csv'
@@ -54,6 +54,13 @@ else:
     with open("../save/dataset/data.dat", "rb") as f:
         (X_train, X_test, y_train, y_test) = pickle.load(f)
         print(len(X_train))
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+print('==> Building network..')
+net = RowCNN(split_size = args.colsize)
+criterion = nn.CrossEntropyLoss()
+net = net.to(device)
         
 if args.resume:
     if(os.path.isfile('../save/network.ckpt')):
@@ -64,13 +71,6 @@ if args.resume:
         with open("../save/info.txt", "r") as f:
             start_epoch, start_step = (int(i) for i in str(f.read()).split(" "))
             print("=> Network : prev epoch found")
-
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-print('==> Building network..')
-net = RowCNN(split_size = args.colsize)
-criterion = nn.CrossEntropyLoss()
-net = net.to(device)
 
 def train(epoch, X_train, y_train):
 
